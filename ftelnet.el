@@ -1,19 +1,13 @@
 ;;; ftelnet.el --- remote login interface
 
-;; Copyright (C) 1992, 1993, 1994, 1995 Free Software Foundation, Inc.
-;; Copyright (C) 1995 Noah S. Friedman
+;; Copyright (C) 1992-1995 Free Software Foundation, Inc.
+;; Copyright (C) 1995, 2011 Noah S. Friedman
 
 ;; Author: Noah Friedman
-;; Maintainer: Noah Friedman <friedman@prep.ai.mit.edu>
-;; Status: Works in Emacs 19.27 and later.
+;; Maintainer: Noah Friedman <friedman@splode.com>
 ;; Keywords: unix, comm
 
-;; LCD Archive Entry:
-;; ftelnet|Noah Friedman|friedman@prep.ai.mit.edu|
-;; remote login interface|
-;; $Date: 2000/10/27 09:22:40 $|$Revision: 1.11 $|~/misc/ftelnet.el.gz|
-
-;; $Id: ftelnet.el,v 1.11 2000/10/27 09:22:40 friedman Exp $
+;; $Id: ftelnet.el,v 1.12 2011/06/13 18:42:20 friedman Exp $
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -26,8 +20,7 @@
 ;; GNU General Public License for more details.
 ;;
 ;; You should have received a copy of the GNU General Public License
-;; along with this program; if not, write to: The Free Software Foundation,
-;; Inc.; 675 Massachusetts Avenue.; Cambridge, MA 02139, USA.
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
 
@@ -205,29 +198,15 @@ variable."
       ;; buffer from a previous exited process.
       (set-marker (process-mark proc) (point-max))
 
-      ;; comint-output-filter-functions is treated like a hook: it is
-      ;; processed via run-hooks or run-hooks-with-args in later versions
-      ;; of emacs.
-      ;; comint-output-filter-functions should already have a
-      ;; permanent-local property, at least in emacs 19.27 or later.
-      (cond
-       ((fboundp 'make-local-hook)
-        (make-local-hook 'comint-output-filter-functions)
-        (add-hook 'comint-output-filter-functions 'ftelnet-carriage-filter
-                  nil t))
-       (t
-        (make-local-variable 'comint-output-filter-functions)
-        (add-hook 'comint-output-filter-functions 'ftelnet-carriage-filter)))
-
       (ftelnet-mode)
+      (add-hook 'comint-output-filter-functions 'ftelnet-carriage-filter nil t)
 
       ;; initial filter to get remote user name if connecting to a telnet
       ;; login port.
       (cond
        ((or (null port)
             (string= port "23"))
-        (add-hook 'comint-output-filter-functions
-                  'ftelnet-user-output-filter)))
+        (add-hook 'comint-output-filter-functions 'ftelnet-user-output-filter nil t)))
 
       (make-local-variable 'ftelnet-host)
       (setq ftelnet-host host)
@@ -339,7 +318,7 @@ local one share the same directories (through NFS)."
      ;; output consisting of the empty string, but it happens.
      ((string= s ""))
      ((string-match "\\(ogin: \\)\\|\\(sername: \\)$" s)
-      (add-hook 'comint-input-filter-functions 'ftelnet-user-input-filter))
+      (add-hook 'comint-input-filter-functions 'ftelnet-user-input-filter nil t))
      ((string-match "^[\C-m\n]+$" s))
      ((string-match "assword:[ \t]*$" s))
      ((string-match ".*\\(incorrect\\)\\|\\(authorization failure\\)$" s))
@@ -347,15 +326,15 @@ local one share the same directories (through NFS)."
      ((and ftelnet-remote-user
            (string-match (concat ftelnet-remote-user "[\C-m\n]*$") s)))
      (t
-      (remove-hook 'comint-output-filter-functions 'ftelnet-user-output-filter)
-      (remove-hook 'comint-input-filter-functions 'ftelnet-user-input-filter)
+      (remove-hook 'comint-output-filter-functions 'ftelnet-user-output-filter t)
+      (remove-hook 'comint-input-filter-functions  'ftelnet-user-input-filter  t)
       (cond
        ((eq ftelnet-directory-tracking-mode t)
         (cd-absolute comint-file-name-prefix)))))
     (store-match-data data)))
 
 (defun ftelnet-user-input-filter (s)
-  (remove-hook 'comint-input-filter-functions 'ftelnet-user-input-filter)
+  (remove-hook 'comint-input-filter-functions 'ftelnet-user-input-filter t)
   (setq ftelnet-remote-user (car (ftelnet-parse-words s)))
   (cond
    ((eq ftelnet-directory-tracking-mode t)
@@ -415,11 +394,6 @@ Delete ARG characters forward, or send an eof to process if at end of buffer."
       (comint-dynamic-complete)
     (insert "\C-i")))
 
-
 (provide 'ftelnet)
-
-;; local variables:
-;; vc-make-backup-files: t
-;; end:
 
 ;;; ftelnet.el ends here
