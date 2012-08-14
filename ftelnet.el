@@ -7,7 +7,7 @@
 ;; Maintainer: Noah Friedman <friedman@splode.com>
 ;; Keywords: unix, comm
 
-;; $Id: ftelnet.el,v 1.12 2011/06/13 18:42:20 friedman Exp $
+;; $Id: ftelnet.el,v 1.13 2012/07/09 22:32:32 friedman Exp $
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -199,7 +199,6 @@ variable."
       (set-marker (process-mark proc) (point-max))
 
       (ftelnet-mode)
-      (add-hook 'comint-output-filter-functions 'ftelnet-carriage-filter nil t)
 
       ;; initial filter to get remote user name if connecting to a telnet
       ;; login port.
@@ -340,17 +339,6 @@ local one share the same directories (through NFS)."
    ((eq ftelnet-directory-tracking-mode t)
     (setq comint-file-name-prefix
           (concat "/" ftelnet-remote-user "@" ftelnet-host ":")))))
-
-(defun ftelnet-carriage-filter (string)
-  (let* ((point-marker (point-marker))
-         (end (process-mark (get-buffer-process (current-buffer))))
-         (beg (or (and (boundp 'comint-last-output-start)
-                       comint-last-output-start)
-                  (- end (length string)))))
-    (goto-char beg)
-    (while (search-forward "\C-m" end t)
-      (delete-char -1))
-    (goto-char point-marker)))
 
 
 ;; Definitions for keybindings
